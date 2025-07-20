@@ -2,125 +2,168 @@ import { useState } from 'react';
 
 const scenarios = [
   {
-    text: 'You receive an email from an unknown sender with a link saying you won a prize. What do you do?',
-    correct: 'Secure',
-    explanation: 'Correct! Never click suspicious links from unknown sources. It could be a phishing attempt.'
+    scenario: 'You get a message: "Click this link to win a free phone!" What should you do?',
+    options: [
+      'Click the link and enter your info',
+      'Ignore the message and tell a trusted adult',
+      'Share the link with your friends'
+    ],
+    correct: 1,
+    explanation: 'Never click suspicious links or share personal info. Always check with a trusted adult!'
   },
   {
-    text: 'You set your password as "123456" for your social media account.',
-    correct: 'Secure',
-    explanation: 'Correct! Always use strong, unique passwords. "123456" is very easy to guess.'
+    scenario: 'Which is the safest password?',
+    options: [
+      'password123',
+      'Your pet’s name',
+      'A long password with letters, numbers, and symbols'
+    ],
+    correct: 2,
+    explanation: 'Strong passwords keep your data safe!'
   },
   {
-    text: 'A stranger sends you a friend request on social media. You accept it.',
-    correct: 'Secure',
-    explanation: 'Correct! Only accept friend requests from people you know and trust.'
+    scenario: 'A new app wants access to your photos, contacts, and location. What should you do?',
+    options: [
+      'Allow all permissions without checking',
+      'Check why the app needs them and only allow what’s needed',
+      'Give permissions because it looks fun'
+    ],
+    correct: 1,
+    explanation: 'Only give apps the permissions they really need.'
   },
   {
-    text: 'You use public Wi-Fi at a café to log in to your banking app.',
-    correct: 'Secure',
-    explanation: 'Correct! Avoid accessing sensitive accounts on public Wi-Fi. It can be insecure.'
+    scenario: 'A stranger in a game chat asks for your real name and address. What do you do?',
+    options: [
+      'Share your info to make a new friend',
+      'Keep your info private and don’t respond',
+      'Ask them for their info first'
+    ],
+    correct: 1,
+    explanation: 'Never share personal info online, even if someone seems friendly.'
   },
   {
-    text: 'You share your home address in a gaming chat with new online friends.',
-    correct: 'Secure',
-    explanation: 'Correct! Never share personal information in public or gaming chats.'
+    scenario: 'Your friend wants to post a funny photo of you online. What’s the best response?',
+    options: [
+      'Let them post it without asking',
+      'Ask them not to post it if you’re uncomfortable',
+      'Post it yourself so you have control'
+    ],
+    correct: 1,
+    explanation: 'It’s okay to say no if you don’t want something shared.'
   }
 ];
 
-const surrenderExplanations = [
-  'Incorrect. Clicking unknown links can lead to scams or malware.',
-  'Incorrect. Weak passwords are easy for hackers to guess.',
-  'Incorrect. Accepting strangers can expose you to risks.',
-  'Incorrect. Public Wi-Fi is not safe for sensitive transactions.',
-  'Incorrect. Sharing personal info online can be dangerous.'
-];
+const PATH_LENGTH = scenarios.length + 1; // +1 for start position
 
 function App() {
-  const [current, setCurrent] = useState(0);
-  const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(0);
+  const [selected, setSelected] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [gameOver, setGameOver] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [tries, setTries] = useState(0);
+  const [position, setPosition] = useState(0); // character position on path
 
-  const handleChoice = (choice) => {
-    if (showFeedback || gameOver) return;
-    const scenario = scenarios[current];
-    let isCorrect = false;
-    let feedbackMsg = '';
-    if (
-      (choice === 'Secure' && scenario.correct === 'Secure') ||
-      (choice === 'Surrender' && scenario.correct === 'Surrender')
-    ) {
-      isCorrect = true;
-      setScore(score + 1);
-      feedbackMsg = scenario.explanation;
+  const current = scenarios[level];
+
+  const handleSelect = (idx) => {
+    if (showFeedback || completed) return;
+    setSelected(idx);
+    if (idx === current.correct) {
+      setShowFeedback(true);
+      setTimeout(() => {
+        setPosition(position + 1);
+        if (level === scenarios.length - 1) {
+          setCompleted(true);
+        } else {
+          setLevel(level + 1);
+          setSelected(null);
+          setShowFeedback(false);
+          setTries(0);
+        }
+      }, 1000);
     } else {
-      feedbackMsg = surrenderExplanations[current];
-    }
-    setFeedback(feedbackMsg);
-    setShowFeedback(true);
-    setTimeout(() => {
-      if (current === scenarios.length - 1) {
-        setGameOver(true);
-      } else {
-        setCurrent(current + 1);
+      setTries(tries + 1);
+      setShowFeedback(true);
+      setTimeout(() => {
         setShowFeedback(false);
-        setFeedback('');
-      }
-    }, 1800);
+      }, 1400);
+    }
   };
 
-  const restartGame = () => {
-    setCurrent(0);
-    setScore(0);
+  const restart = () => {
+    setLevel(0);
+    setSelected(null);
     setShowFeedback(false);
-    setFeedback('');
-    setGameOver(false);
+    setCompleted(false);
+    setTries(0);
+    setPosition(0);
   };
+
+  // Render the path as a row of cells, with the character and finish line
+  const renderPath = () => (
+    <div className="flex items-center justify-center gap-2 mb-6 mt-2">
+      {Array.from({ length: PATH_LENGTH }).map((_, i) => (
+        <div
+          key={i}
+          className={`w-10 h-10 flex items-center justify-center rounded-full border-2
+            ${i === position ? 'bg-yellow-200 border-yellow-400 shadow-lg scale-110' : 'bg-white border-gray-300'}
+            ${i === PATH_LENGTH - 1 ? 'border-green-500' : ''}
+            transition-all duration-300
+          `}
+        >
+          {i === position ? '🧑\u200d💻' : i === PATH_LENGTH - 1 ? '🏁' : ''}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="max-w-md mx-auto mt-12 p-6 bg-blue-50 rounded-2xl shadow-lg text-center font-sans">
-      <h1 className="text-3xl font-bold text-blue-600 mb-1">SOS: Secure or Surrender</h1>
-      <h2 className="text-lg text-gray-700 mb-6 font-medium">Data Defender Challenge</h2>
-      {gameOver ? (
-        <div className="bg-yellow-50 rounded-xl p-6 shadow-md">
-          <h3 className="text-xl font-semibold text-orange-700 mb-2">Game Over!</h3>
-          <p className="text-lg font-medium mb-1">Your score: <span className="text-blue-700">{score} / {scenarios.length}</span></p>
-          <p className="mb-4 text-gray-800">{score >= 4 ? 'Great job! You know how to stay safe online.' : 'Keep learning! Online safety is important.'}</p>
-          <button
-            onClick={restartGame}
-            className="mt-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
-          >
-            Play Again
-          </button>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg text-center font-sans min-h-[500px] flex flex-col justify-center">
+      <h1 className="text-2xl font-bold text-blue-700 mb-2">Data Defender: Privacy Path</h1>
+      {renderPath()}
+      {completed ? (
+        <div className="flex flex-col items-center mt-4">
+          <div className="text-6xl mb-2">🎉</div>
+          <h2 className="text-xl font-bold text-green-700 mb-2">You reached the finish line!</h2>
+          <p className="text-lg text-gray-800 mb-4">You answered all the privacy questions and kept your data safe!</p>
+          <button onClick={restart} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">Play Again</button>
         </div>
       ) : (
         <div>
-          <div className="bg-blue-100 rounded-lg p-4 mb-4 text-base text-gray-900">
-            <p><b>Scenario {current + 1}:</b> {scenarios[current].text}</p>
+          <div className="bg-white/80 rounded-lg p-3 text-base text-gray-900 shadow mb-4">
+            <p>{current.scenario}</p>
           </div>
-          <div className="flex justify-center gap-6 mb-3">
-            <button
-              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-              onClick={() => handleChoice('Secure')}
-              disabled={showFeedback}
-            >
-              ✅ Secure
-            </button>
-            <button
-              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-              onClick={() => handleChoice('Surrender')}
-              disabled={showFeedback}
-            >
-              ❌ Surrender
-            </button>
+          <div className="flex flex-col gap-3 mb-3">
+            {current.options.map((opt, idx) => (
+              <button
+                key={idx}
+                className={`px-4 py-2 rounded-lg font-semibold text-base border transition-all
+                  ${selected === idx
+                    ? idx === current.correct
+                      ? 'bg-green-500 text-white border-green-600 scale-105'
+                      : 'bg-red-500 text-white border-red-600 scale-105'
+                    : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-100 hover:border-blue-400'}
+                  ${showFeedback && selected !== idx ? 'opacity-60' : ''}
+                `}
+                onClick={() => handleSelect(idx)}
+                disabled={showFeedback}
+              >
+                {String.fromCharCode(65 + idx)}. {opt}
+              </button>
+            ))}
           </div>
           <div className="min-h-[2.2em] text-blue-800 font-medium mb-2 text-base">
-            {showFeedback && <p>{feedback}</p>}
+            {showFeedback && (
+              selected === current.correct
+                ? <span>Correct! 🎯</span>
+                : <span>{current.explanation}</span>
+            )}
           </div>
-          <div className="text-gray-700 text-base">
-            <p>Score: <span className="font-semibold">{score}</span></p>
+          <div className="text-gray-700 text-base mb-1">
+            <p>Question: <span className="font-semibold">{level + 1}</span> / {scenarios.length}</p>
+            {tries > 0 && selected !== current.correct && (
+              <p className="text-sm text-red-500">Try again!</p>
+            )}
           </div>
         </div>
       )}
